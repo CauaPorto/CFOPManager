@@ -29,7 +29,7 @@ function importarPlanilha(caminho: string) {
 
 import { Request, Response } from 'express';
 
-app.post('/upload', upload.single('arquivo'), (req: Request, res: Response): void => {
+app.post('/upload', upload.single('arquivo'), (req: Request, res: Response) => {
   if (!req.file) {
     res.status(400).send('Nenhum arquivo enviado!');
     return;
