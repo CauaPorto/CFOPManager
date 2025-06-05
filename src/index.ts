@@ -1,49 +1,58 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import multer from 'multer';
-import cors from 'cors';
 import path from 'path';
-import * as xlsx from 'xlsx';
-import dotenv from 'dotenv';
-
-dotenv.config();
+import fs from 'fs';
+import { filtrarEExportarCFOP } from './importsheet';
 
 const app = express();
-const PORTA = process.env.PORT || 3001;
+const PORT = 3000;
 
+app.use(express.static(path.join(__dirname, '..', 'public')));
 
-app.use(cors());
-app.use(express.static('public'));
+const storage = multer.diskStorage({
+  destination: path.join(__dirname, '..', 'uploads'),
+  filename: (req, file, cb) => cb(null, file.originalname),
+});
+const upload = multer({ storage });
 
-
-const upload = multer({ dest: 'uploads/' });
-
-
-function importarPlanilha(caminho: string) {
-  const workbook = xlsx.readFile(caminho); 
-  const nomeDaPrimeiraAba = workbook.SheetNames[0]; 
-  const planilha = workbook.Sheets[nomeDaPrimeiraAba]; 
-  const dados = xlsx.utils.sheet_to_json(planilha); 
-  return dados;
-}
-
-
-import { Request, Response } from 'express';
-
-app.post('/upload', upload.single('arquivo'), (req: Request, res: Response) => {
+app.post('/upload', upload.single('planilha'), (req: Request, res: Response) => {
   if (!req.file) {
-    res.status(400).send('Nenhum arquivo enviado!');
+    res.status(400).send('Nenhum arquivo enviado.');
     return;
   }
 
-  const caminho = path.resolve(req.file.path);
-  const dados = importarPlanilha(caminho);
-
-  res.json({
-    mensagem: 'Planilha importada com sucesso!',
-    dados,
-  });
+  res.send('Arquivo enviado com sucesso!');
 });
 
-app.listen(PORTA, () => {
-  console.log(`Servidor rodando em http://localhost:${PORTA}`);
+app.get('/baixar-modelo', (req: Request, res: Response) => {
+  const filePath = path.join(__dirname, '..', 'modelo', 'Planilhacerta.xlsx');
+
+  if (fs.existsSync(filePath)) {
+    res.download(filePath, 'modelo_cfop.xlsx');
+  } else {
+    res.status(404).send('Arquivo modelo não encontrado.');
+  }
+});
+
+app.get('/filtrar-cfop/:nomeArquivo', (req: Request, res: Response) => {
+  const nomeArquivo = req.params.nomeArquivo;
+  const caminhoDoArquivo = path.join(__dirname, '..', 'uploads', nomeArquivo);
+
+  if (!fs.existsSync(caminhoDoArquivo)) {
+    res.status(404).send('Arquivo não encontrado.');
+    return;
+  }
+
+  try {
+    const nomeArquivoFiltrado = filtrarEExportarCFOP(caminhoDoArquivo);
+    const caminhoDownload = path.join(__dirname, '..', 'uploads', nomeArquivoFiltrado);
+    res.download(caminhoDownload, nomeArquivoFiltrado);
+  } catch (erro) {
+    console.error(erro);
+    res.status(500).send('Erro ao filtrar a planilha.');
+  }
+});
+
+app.listen(PORT, () => {
+  console.log(`Servidor rodando em http://localhost:${PORT}`);
 });

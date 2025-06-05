@@ -1,14 +1,26 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
   <meta charset="UTF-8">
-  <title>Upload de Planilha</title>
+  <title>CFOP Manager</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h2>Importar Planilha Excel</h2>
-  <form action="/upload" method="POST" enctype="multipart/form-data">
-    <input type="file" name="arquivo" accept=".xlsx" required />
-    <button type="submit">Enviar</button>
+  <h1>📁 CFOP Manager</h1>
+  <form action="/upload" method="post" enctype="multipart/form-data">
+    <label for="arquivo">Selecione a planilha (.xlsx):</label>
+    <input type="file" id="arquivo" name="planilha" accept=".xlsx" required />
+    <button type="submit">📤 Enviar Planilha</button>
+  </form>
+
+
+  <form action="/baixar-modelo" method="get">
+    <button type="submit">📥 Baixar Planilha Modelo</button>
+  </form>
+
+
+  <form action="/filtrar-cfop/Planilhacerta.xlsx" method="get">
+    <button type="submit">🔍 Filtrar CFOP 1102</button>
   </form>
 </body>
 </html>

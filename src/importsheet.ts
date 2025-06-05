@@ -1,15 +1,38 @@
 import * as XLSX from 'xlsx';
-import fs from 'node:fs';
-import path from 'node:path';
+import fs from 'fs';
+import path from 'path';
 
-export function importarPlanilha(caminhoDoArquivo: string) {
-  const fileBuffer = fs.readFileSync(path.resolve(caminhoDoArquivo));
-  const workbook = XLSX.read(fileBuffer, { type: 'buffer' });
-  const nomeDaPrimeiraAba = workbook.SheetNames[0];
-  const primeiraAba = workbook.Sheets[nomeDaPrimeiraAba];
-  const dados = XLSX.utils.sheet_to_json(primeiraAba);
+export function filtrarEExportarCFOP(caminhoDoArquivo: string): string {
+  const arquivo = fs.readFileSync(path.resolve(caminhoDoArquivo));
+  const planilhaCompleta = XLSX.read(arquivo, { type: 'buffer' });
 
-  console.log('Dados importados:', dados);
+  const nomeAba = planilhaCompleta.SheetNames[0];
+  const aba = planilhaCompleta.Sheets[nomeAba];
 
-  return dados;
+  const todasAsLinhas: any[][] = XLSX.utils.sheet_to_json(aba, {
+    header: 1,
+    defval: ''
+  });
+
+  const linhasFiltradas: any[][] = [['CFOP', 'Valor']];
+
+  for (let i = 0; i < todasAsLinhas.length; i++) {
+    const linhaAtual = todasAsLinhas[i];
+    const cfop = String(linhaAtual[0]).trim();
+    const valor = linhaAtual[1];
+
+    if (cfop === '1104') {
+      linhasFiltradas.push([cfop, valor]);
+    }
+  }
+
+  const novaAba = XLSX.utils.aoa_to_sheet(linhasFiltradas);
+  const novaPlanilha = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(novaPlanilha, novaAba, 'Filtrado');
+
+  const nomeDoArquivoNovo = 'CFOP_filtrada.xlsx';
+  const caminhoCompleto = path.join(__dirname, '../uploads', nomeDoArquivoNovo);
+  XLSX.writeFile(novaPlanilha, caminhoCompleto);
+
+  return nomeDoArquivoNovo;
 }
